@@ -1,0 +1,1 @@
+[20240310062329] buildeb -q -n bashed -s usr/bin/bashed:/usr/bin -i usr/share/bashed/bashed-help:/usr/share/bashed -d bash -m https://github.com/asmrtfm/bashed
