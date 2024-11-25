@@ -34,10 +34,13 @@
 		echo -e "                \e[0;37m#  otherwise, behaves normally.\e[0m"
 		echo ""
 		echo -e "\e[1;32mFILTERING & CONDITIONAL EXPRESSIONS\e[0;32m:\e[0m"
-		echo "  '??[flexndz]'       : Built-in type checking: \` [[ -[flexndz] <...> ]] \`"
-		echo "  '?![flexndz]'       : Built-in type checking: \` [[ ! -[flexndz] <...> ]] \`"
-		echo "  '??[flexndz].{EXPR}': Apply EXPR to lines which pass a type/null check."
-		echo "  '?![flexndz].{EXPR}': Apply EXPR to lines which fail a type/null check."
+		echo "  '??[zdploukfnsexy]'       : test every line ( \` [[ -[zdploukfnsexy] <...> ]] \` )"
+		echo "  '?![zdploukfnsexy]'       : test every line ( \` [[ ! -[zdploukfnsexy] <...> ]] \` )"
+		echo "  '??[zdploukfnsexy].{EXPR}': Apply EXPR to lines which pass a <[[ -<> test ]]>"
+		echo "  '?![zdploukfnsexy].{EXPR}': Apply EXPR to lines which fail a <[[ -<> test ]]>"
+
+		echo "  TODO: nested circuits of the above by chaining, like discrete && chains"
+
 		echo "  '??[=|~]_'        : Supress lines not [matching|containing] <_>"
 		echo "  '?![=|~]_'        : Supress lines [matching|containing] <_>"
 		echo "  '??[=|~]_.{EXPR}' : Apply EXPR to lines [matching|containing] <_>"
@@ -79,7 +82,7 @@
 		echo -e "                 \e[0;37m# example:\e[0m"
 		echo -e "                 \e[0;37m# trim up to third occurance of ['/'or'\']\e[0m"
 		echo "                 $(echo -e "\e[0;37m#\e[0m")   \`... | bashed '{3}."'#*[\/\\]'"' \`"
-		echo ""
+		echo -e "\n\e[1;33m ...ohh and  bc  is pretty much a first-class-citizen now too.\n"
 	}
 	exit 0
 }
@@ -116,8 +119,10 @@ toFirst() {
 
 dundre() { [[ "$String" != *$1* ]] || String="${String%%${String#*$1}*}" ; }
 
+mayuth() { return $(echo "$@" | bc); }
+
 OtherPipe() {
-	local -a Argz string
+	local -a Argz=() string=()
 	while read line ; do
 		String="$line"
 		for ((a=1;a<=$#;a++)); do
@@ -133,14 +138,17 @@ OtherPipe() {
 			\?\!\=*[!\}]) exactly "1" "${!a:3}" || { unset String ; break ; } ;;
 			\?\?\~*[!\}]) fuzzily "0" "${!a:3}" || { unset String ; break ; } ;;
 			\?\!\~*[!\}]) fuzzily "1" "${!a:3}" || { unset String ; break ; } ;;
-			\?\?[flexndz]) whats "0" "${!a:2:1}" || { unset String ; break ; } ;;
-			\?\![flexndz]) whats "1" "${!a:2:1}" || { unset String ; break ; } ;;
-			\?\?[flexndz]\.\{*\}) onDo="${!a#*\.\{}" && whats "1" "${!a:2: -${#onDo}-2}" || { Argz=( "$String" ${onDo:: -1} ) && for ((z=0;z<${#Argz[@]};z++)); do string=$(echo "${string:-$String}" | $FUNCNAME "${Argz[z]}") ; done && String="$string" ; unset string Argz[*] ; } ;;
-			\?\![flexndz]\.\{*\}) onDo="${!a#*\.\{}" && whats "0" "${!a:2: -${#onDo}-2}" || { Argz=( "$String" ${onDo:: -1} ) && for ((z=0;z<${#Argz[@]};z++)); do string=$(echo "${string:-$String}" | $FUNCNAME "${Argz[z]}") ; done && String="$string" ; unset string Argz[*] ; } ;;
-			\?\?\=*\.\{*\}) onDo="${!a#*\.\{}" && exactly "1" "${!a:3: -${#onDo}-2}" || { Argz=( "$String" ${onDo:: -1} ) && for ((z=0;z<${#Argz[@]};z++)); do string=$(echo "${string:-$String}" | $FUNCNAME "${Argz[z]}") ; done && String="$string" ; unset string Argz[*] ; } ;;
-			\?\!\=*\.\{*\}) onDo="${!a#*\.\{}" && exactly "0" "${!a:3: -${#onDo}-2}" || { Argz=( "$String" ${onDo:: -1} ) && for ((z=0;z<${#Argz[@]};z++)); do string=$(echo "${string:-$String}" | $FUNCNAME "${Argz[z]}") ; done && String="$string" ; unset string Argz[*] ; } ;;
-			\?\?\~*\.\{*\}) onDo="${!a#*\.\{}" && fuzzily "1" "${!a:3: -${#onDo}-2}" || { Argz=( "$String" ${onDo:: -1} ) && for ((z=0;z<${#Argz[@]};z++)); do string=$(echo "${string:-$String}" | $FUNCNAME "${Argz[z]}") ; done && String="$string" ; unset string Argz[*] ; } ;;
-			\?\!\~*\.\{*\}) onDo="${!a#*\.\{}" && fuzzily "0" "${!a:3: -${#onDo}-2}" || { Argz=( "$String" ${onDo:: -1} ) && for ((z=0;z<${#Argz[@]};z++)); do string=$(echo "${string:-$String}" | $FUNCNAME "${Argz[z]}") ; done && String="$string" ; unset string Argz[*] ; } ;;
+			[\(\+\-\/\*\%\)][0-9\.\(\+\-\ \/\*\%\)]*) String="$(echo "${String//[!0-9\(\.\-\+\*\%\<\=\>\)\ ]/} ${!a//[!0-9\(\.\-\+\*\%\<\=\>\)\ ]/}" | bc -l)" ;;
+      [\<\=\!\>][0-9\ \(\!\.\-\+\*\%\<\=\>\)]*) mayuth "! ${String//[!0-9\(\.\-\+\*\%\<\=\>\)\ ]/}" "${!a//[!0-9\(\.\-\+\*\%\<\=\>\)\ ]/}" || { unset String; break; } ;;
+			[\<\=\!\>][0-9\ \(\!\.\-\+\*\%\<\=\>\)]*\ \.\{*\}) doif="${!a#*\ \.\{}" && mayuth "${String//[!0-9\(\.\-\+\*\%\<\=\>\)\ ]/}" "${!a//[!0-9\(\.\-\+\*\%\<\=\>\)\ ]/}" || { Argz=( "$String" ${doif:: -1} ) && for ((z=0;z<${#Argz[@]};z++)); do string=$(echo "${string:-$String}" | $FUNCNAME "${Argz[z]}") ; done && String="$string" ; unset string Argz[*] ; } ;;
+			\?\?[zdploukfnsexy]) whats "0" "${!a:2:1}" || { unset String ; break ; } ;;
+			\?\![zdploukfnsexy]) whats "1" "${!a:2:1}" || { unset String ; break ; } ;;
+			\?\?[zdploukfnsexy]\ \.\{*\}) doif="${!a#*\ \.\{}" && whats "1" "${!a:2: -${#doif}-2}" || { Argz=( "$String" ${doif:: -1} ) && for ((z=0;z<${#Argz[@]};z++)); do string=$(echo "${string:-$String}" | $FUNCNAME "${Argz[z]}") ; done && String="$string" ; unset string Argz[*] ; } ;;
+			\?\![zdploukfnsexy]\ \.\{*\}) doif="${!a#*\ \.\{}" && whats "0" "${!a:2: -${#doif}-2}" || { Argz=( "$String" ${doif:: -1} ) && for ((z=0;z<${#Argz[@]};z++)); do string=$(echo "${string:-$String}" | $FUNCNAME "${Argz[z]}") ; done && String="$string" ; unset string Argz[*] ; } ;;
+			\?\?\=*\ \.\{*\}) doif="${!a#*\ \.\{}" && exactly "1" "${!a:3: -${#doif}-2}" || { Argz=( "$String" ${doif:: -1} ) && for ((z=0;z<${#Argz[@]};z++)); do string=$(echo "${string:-$String}" | $FUNCNAME "${Argz[z]}") ; done && String="$string" ; unset string Argz[*] ; } ;;
+			\?\!\=*\ \.\{*\}) doif="${!a#*\ \.\{}" && exactly "0" "${!a:3: -${#doif}-2}" || { Argz=( "$String" ${doif:: -1} ) && for ((z=0;z<${#Argz[@]};z++)); do string=$(echo "${string:-$String}" | $FUNCNAME "${Argz[z]}") ; done && String="$string" ; unset string Argz[*] ; } ;;
+			\?\?\~*\ \.\{*\}) doif="${!a#*\ \.\{}" && fuzzily "1" "${!a:3: -${#doif}-2}" || { Argz=( "$String" ${doif:: -1} ) && for ((z=0;z<${#Argz[@]};z++)); do string=$(echo "${string:-$String}" | $FUNCNAME "${Argz[z]}") ; done && String="$string" ; unset string Argz[*] ; } ;;
+			\?\!\~*\ \.\{*\}) doif="${!a#*\ \.\{}" && fuzzily "0" "${!a:3: -${#doif}-2}" || { Argz=( "$String" ${doif:: -1} ) && for ((z=0;z<${#Argz[@]};z++)); do string=$(echo "${string:-$String}" | $FUNCNAME "${Argz[z]}") ; done && String="$string" ; unset string Argz[*] ; } ;;
 			\:[!0-9\:]*|\:\:[!0-9]*)
 				if [[ "${!a}" == \:\:+([!\:])\:\:* ]]; then
 					while read ence ; do [[ -z "$ence" ]] || dundre "$ence" ; done < <(echo "${!a//'::'/$'\n'}" )
