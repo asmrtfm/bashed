@@ -120,7 +120,8 @@ toFirst() {
 dundre() { [[ "$String" != *$1* ]] || String="${String%%${String#*$1}*}" ; }
 
 mayuth() { return $(echo "$@" | bc); }
-
+# WIP
+# [\<\=\!\>][0-9\ \(\!\.\-\+\*\%\<\=\>\)]*\ \.\{*\}) doif="${!a#*\ \.\{}" && mayuth "${String//[!0-9\(\.\-\+\*\%\<\=\>\)\ ]/}" "${!a//[!0-9\(\.\-\+\*\%\<\=\>\)\ ]/}" || { Argz=( "$String" ${doif:: -1} ) && for ((z=0;z<${#Argz[@]};z++)); do string=$(echo "${string:-$String}" | $FUNCNAME "${Argz[z]}") ; done && String="$string" ; unset string Argz[*] ; } ;;
 OtherPipe() {
 	local -a Argz=() string=()
 	while read line ; do
@@ -140,7 +141,6 @@ OtherPipe() {
 			\?\!\~*[!\}]) fuzzily "1" "${!a:3}" || { unset String ; break ; } ;;
 			[\(\+\-\/\*\%\)][0-9\.\(\+\-\ \/\*\%\)]*) String="$(echo "${String//[!0-9\(\.\-\+\*\%\<\=\>\)\ ]/} ${!a//[!0-9\(\.\-\+\*\%\<\=\>\)\ ]/}" | bc -l)" ;;
       [\<\=\!\>][0-9\ \(\!\.\-\+\*\%\<\=\>\)]*) mayuth "! ${String//[!0-9\(\.\-\+\*\%\<\=\>\)\ ]/}" "${!a//[!0-9\(\.\-\+\*\%\<\=\>\)\ ]/}" || { unset String; break; } ;;
-			[\<\=\!\>][0-9\ \(\!\.\-\+\*\%\<\=\>\)]*\ \.\{*\}) doif="${!a#*\ \.\{}" && mayuth "${String//[!0-9\(\.\-\+\*\%\<\=\>\)\ ]/}" "${!a//[!0-9\(\.\-\+\*\%\<\=\>\)\ ]/}" || { Argz=( "$String" ${doif:: -1} ) && for ((z=0;z<${#Argz[@]};z++)); do string=$(echo "${string:-$String}" | $FUNCNAME "${Argz[z]}") ; done && String="$string" ; unset string Argz[*] ; } ;;
 			\?\?[zdploukfnsexy]) whats "0" "${!a:2:1}" || { unset String ; break ; } ;;
 			\?\![zdploukfnsexy]) whats "1" "${!a:2:1}" || { unset String ; break ; } ;;
 			\?\?[zdploukfnsexy]\ \.\{*\}) doif="${!a#*\ \.\{}" && whats "1" "${!a:2: -${#doif}-2}" || { Argz=( "$String" ${doif:: -1} ) && for ((z=0;z<${#Argz[@]};z++)); do string=$(echo "${string:-$String}" | $FUNCNAME "${Argz[z]}") ; done && String="$string" ; unset string Argz[*] ; } ;;
