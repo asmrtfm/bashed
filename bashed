@@ -1,4 +1,5 @@
 #!/usr/bin/env bash
+
 [[ "${1,,}" != +(\-)@(h)?(elp) ]] || {
 	echo -e "\e[1;32mNAME\e[0;32m:\e[0m"
 	echo '   bashed - omni-directional bash-builtin-centric transmutations'
@@ -83,6 +84,41 @@
 		echo -e "                 \e[0;37m# trim up to third occurance of ['/'or'\']\e[0m"
 		echo "                 $(echo -e "\e[0;37m#\e[0m")   \`... | bashed '{3}."'#*[\/\\]'"' \`"
 		echo -e "\n\e[1;33m ...ohh and  bc  is pretty much a first-class-citizen now too.\n"
+		#    ${parameter@operator}
+		#              Parameter transformation.  The expansion is either a transformation of the value of parameter or infor‐
+		#              mation about parameter itself, depending on the value of operator.  Each operator is a single letter:
+		#
+		#              U      The expansion is a string that is the value of parameter with  lowercase  alphabetic  characters
+		#                     converted to uppercase.
+		#
+		#              u      The  expansion  is a string that is the value of parameter with the first character converted to
+		#                     uppercase, if it is alphabetic.
+		#
+		#              L      The expansion is a string that is the value of parameter with  uppercase  alphabetic  characters
+		#                     converted to lowercase.
+		#
+		#              Q      The  expansion  is a string that is the value of parameter quoted in a format that can be reused
+		#                     as input.
+		#
+		#              E      The expansion is a string that is the value of parameter with  backslash  escape  sequences  ex‐
+		#                     panded as with the $'...' quoting mechanism.
+		#
+		#              P      The expansion is a string that is the result of expanding the value of parameter as if it were a
+		#                     prompt string (see PROMPTING below).
+		#
+		#              A      The expansion is a string in the form of an assignment statement or  declare  command  that,  if
+		#                     evaluated, will recreate parameter with its attributes and value.
+		#
+		#              K      Produces  a  possibly-quoted version of the value of parameter, except that it prints the values
+		#                     of indexed and associative arrays as a sequence of quoted key-value pairs (see Arrays above).
+		#
+		#              a      The expansion is a string consisting of flag values representing parameter's attributes.
+		#
+		#              If parameter is @ or *, the operation is applied to each positional parameter in turn, and  the  expan‐
+		#              sion  is  the resultant list.  If parameter is an array variable subscripted with @ or *, the operation
+		#              is applied to each member of the array in turn, and the expansion is the resultant list.
+		#
+		#              The result of the expansion is subject to word splitting and pathname expansion.
 	}
 	exit 0
 }
@@ -119,13 +155,14 @@ toFirst() {
 
 dundre() { [[ "$String" != *$1* ]] || String="${String%%${String#*$1}*}" ; }
 
-mayuth() { return $(echo "$@" | bc); }
+notMath() { [[ "$@" =~ [^0-9\(\)\.\ \-\+\*\/\%\<\=] ]]; }
+mayuth() { noMath "$@" || return $(echo "$@" | bc); }
 # WIP
 # [\<\=\!\>][0-9\ \(\!\.\-\+\*\%\<\=\>\)]*\ \.\{*\}) doif="${!a#*\ \.\{}" && mayuth "${String//[!0-9\(\.\-\+\*\%\<\=\>\)\ ]/}" "${!a//[!0-9\(\.\-\+\*\%\<\=\>\)\ ]/}" || { Argz=( "$String" ${doif:: -1} ) && for ((z=0;z<${#Argz[@]};z++)); do string=$(echo "${string:-$String}" | $FUNCNAME "${Argz[z]}") ; done && String="$string" ; unset string Argz[*] ; } ;;
 OtherPipe() {
 	local -a Argz=() string=()
-	while read line ; do
-		String="$line"
+	while read -r line ; do
+		String="${line@Q}"
 		for ((a=1;a<=$#;a++)); do
 			case "${!a}" in
 			*\/*"$'\n'"*\/*) if [[ "${!a##*\/}" == *[!\ ]* ]]; then cat - | dp "$String" | $FUNCNAME "//\|/'${!a##*\/}'" "${@:$a+1}" ; else { echo "$String" ; cat - ; } | xargs | $FUNCNAME "${@:$a+1}" ; fi ; unset String ;;
@@ -139,8 +176,9 @@ OtherPipe() {
 			\?\!\=*[!\}]) exactly "1" "${!a:3}" || { unset String ; break ; } ;;
 			\?\?\~*[!\}]) fuzzily "0" "${!a:3}" || { unset String ; break ; } ;;
 			\?\!\~*[!\}]) fuzzily "1" "${!a:3}" || { unset String ; break ; } ;;
-			[\(\+\-\/\*\%\)][0-9\.\(\+\-\ \/\*\%\)]*) String="$(echo "${String//[!0-9\(\.\-\+\*\%\<\=\>\)\ ]/} ${!a//[!0-9\(\.\-\+\*\%\<\=\>\)\ ]/}" | bc -l)" ;;
-      [\<\=\!\>][0-9\ \(\!\.\-\+\*\%\<\=\>\)]*) mayuth "! ${String//[!0-9\(\.\-\+\*\%\<\=\>\)\ ]/}" "${!a//[!0-9\(\.\-\+\*\%\<\=\>\)\ ]/}" || { unset String; break; } ;;
+			[\(\+\-\/\*\%\)][0-9\.\(\+\-\ \/\*\%\)]*) [[ "$line" == *\)\.* || "$line" == *\.\)* ]] || String="$(echo "${String//[!0-9\(\.\-\+\*\%\<\=\>\)\ ]/} ${!a//[!0-9\(\.\-\+\*\%\<\=\>\)\ ]/}" | bc -l)" ;;
+			[\<\=\!\>][0-9\ \(\!\.\-\+\*\%\<\=\>\)]*) [[ "$line" == *\)\.* || "$line" == *\.\)* ]] || { mayuth "! ${String//[!0-9\(\.\-\+\*\%\<\=\>\)\ ]/}" "${!a//[!0-9\(\.\-\+\*\%\<\=\>\)\ ]/}" || { unset String; break; }; } ;;
+			[UuLQEPAKa]|\@[UuLQEPAKa]) eval String="\${String@${!a#*\@}}" ;;
 			\?\?[zdploukfnsexy]) whats "0" "${!a:2:1}" || { unset String ; break ; } ;;
 			\?\![zdploukfnsexy]) whats "1" "${!a:2:1}" || { unset String ; break ; } ;;
 			\?\?[zdploukfnsexy]\ \.\{*\}) doif="${!a#*\ \.\{}" && whats "1" "${!a:2: -${#doif}-2}" || { Argz=( "$String" ${doif:: -1} ) && for ((z=0;z<${#Argz[@]};z++)); do string=$(echo "${string:-$String}" | $FUNCNAME "${Argz[z]}") ; done && String="$string" ; unset string Argz[*] ; } ;;
